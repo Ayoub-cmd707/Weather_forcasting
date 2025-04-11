@@ -10,7 +10,7 @@ import postprocessors.MBM as MBM
 
 #THIS IS FOR 100M WINDSPEED
 # Parameters and directories
-params = ['t2m', 'u10', 'v10', 'tcc', 'u100', 'v100', 'z', 't', 'p10fg6', 'ssrd6', 'strd6', 'ssrd6_obs']
+params = ['t2m', 'u10', 'v10', 'tcc', 'u100', 'v100', 'z', 't', 'p10fg6', 'ssrd6', 'strd6']
 directory = "../TrainValTestSplit"
 base_dir = "../data"
 output_dir = './resultsClassicalMBM'  # Directory to save results
@@ -25,6 +25,9 @@ def load_forecast_data(file_list, base_dir, params, lead):
             dataset = dataset.isel(step=lead)
             for j, var in enumerate(params):
                 data_array[j, i, :, 0, 0, :, :] = dataset[var]
+                if np.isnan(data_array[j, i]).any():
+                    print(f"⚠️ NaN gevonden in var '{var}' voor bestand: {file}")
+   
     print("Forecast data loaded.")
     return data_array
 
@@ -47,14 +50,14 @@ def load_observation_data(file_list, base_dir, lead):
 print("Loading testing forecast and observation data files...")
 with open(os.path.join(directory, "test_eupp_files.pkl"), 'rb') as f:
     rfcs_test_file = pickle.load(f)
-    print(rfcs_test_file)
+    #print(rfcs_test_file)
 with open(os.path.join(directory, "test_era5_files.pkl"), 'rb') as f:
     obs_test_file = pickle.load(f)
-    print(obs_test_file)
+    #print(obs_test_file)
 
 
 with open(time_log_path, 'w') as time_log_file:
-    for lead_time in range(1, 2):
+    for lead_time in range(0, 1):
         try:
             print(f"\nProcessing lead time {lead_time}...")
 
@@ -66,12 +69,15 @@ with open(time_log_path, 'w') as time_log_file:
                 rfcs_train_file = pickle.load(f)
         
             rfcs_array_train = load_forecast_data(rfcs_train_file, base_dir, params, lead_time)
+            print("NaN check - rfcs_array_train:", np.isnan(rfcs_array_train).any())
             gc.collect()  # Free memory
 
             print("Loading training observation data files...")
             with open(os.path.join(directory, "train_era5_files.pkl"), 'rb') as f:
                 obs_train_file = pickle.load(f)
+                
             obs_array_train = load_observation_data(obs_train_file, base_dir, lead_time)
+            print("NaN check - obs_array_train:", np.isnan(obs_array_train).any())
             gc.collect()  # Free memory
 
             # Initialize the data structures for MBM
@@ -79,9 +85,16 @@ with open(time_log_path, 'w') as time_log_file:
             rfcs_whole_Data = Data(rfcs_array_train)
             obs_whole_Data = Data(obs_array_train)
 
+                
+            
+
+            print("NaN check - rfcs_whole_Data.data:", np.isnan(rfcs_whole_Data.data).any())
+            print("NaN check - obs_whole_Data.data:", np.isnan(obs_whole_Data.data).any())
+
             # Train the MBM postprocessor
             print("Training MBM postprocessor...")
             essacc = MBM.EnsembleAbsCRPSTruncCorrection()
+            print("Na training MBM, alles nog goed.")
             essacc.train(obs_whole_Data, rfcs_whole_Data, ntrial=1)
             print("MBM training complete.")
 
@@ -91,18 +104,62 @@ with open(time_log_path, 'w') as time_log_file:
 
             # Load testing forecast data for the current lead time
             rfcs_array_test = load_forecast_data(rfcs_test_file, base_dir, params, lead_time)
+            print("NaN check - rfcs_array_test:", np.isnan(rfcs_array_test).any())
             gc.collect()
 
             # Load testing observation data for the current lead time
             obs_array_test = load_observation_data(obs_test_file, base_dir, lead_time)
+            print("NaN check - obs_array_test:", np.isnan(obs_array_test).any())
             gc.collect()
+            
+
 
             # Apply MBM postprocessor to the test data
             print("Applying MBM postprocessor to testing data...")
             test_whole = Data(rfcs_array_test)
             testMBM_whole = essacc(test_whole)[:,:,:,:,:,:]
             print(f"MBM testing complete for lead time {lead_time}.")
+            
+            # Apply MBM postprocessor to the test data
+            print("Applying MBM postprocessor to testing data...")
+            test_whole = Data(rfcs_array_test)
+            testMBM_whole = essacc(test_whole)[:,:,:,:,:,:]
+            print(f"MBM testing complete for lead time {lead_time}.")
 
+            # ➕ Voeg dit toe om de relevante SSRD6 arrays eruit te halen:
+            ssrd6_index = params.index('ssrd6')
+            
+            print("rfcs_array_test shape:", rfcs_array_test.shape)
+            print("ssrd6_index:", ssrd6_index)
+            print("params:", params)
+
+            forecast_ssrd6 = rfcs_array_test[ssrd6_index, :, 0, 0, 0, :, :]  # shape: (time, lat, lon)
+            print("testMBM_whole shape:", testMBM_whole.shape)
+
+            # Alleen als testMBM_whole exact dezelfde structuur heeft als rfcs_array_test
+            if testMBM_whole.shape[0] == len(params):
+                mbm_prediction_ssrd6 = testMBM_whole[ssrd6_index, :, 0, 0, 0, :, :]
+            else:
+                # testMBM_whole bevat alleen ssrd6
+                mbm_prediction_ssrd6 = testMBM_whole[0, :, 0, 0, 0, :, :]
+
+            observation_ssrd6 = obs_array_test[0, :, 0, 0, 0, :, :]  # shape: (time, lat, lon)
+            #print('voor np')
+            #print("rfcs_array_test shape:", rfcs_array_test.shape)
+            #print("ssrd6_index:", ssrd6_index)
+            #print("params:", params)
+            #print('begin met printen')
+            # ➕ En sla ze op voor plotting in notebook:
+            np.save(os.path.join(output_dir, f'forecast_ssrd6_lt{lead_time}.npy'), forecast_ssrd6)
+            np.save(os.path.join(output_dir, f'mbm_prediction_ssrd6_lt{lead_time}.npy'), mbm_prediction_ssrd6)
+            np.save(os.path.join(output_dir, f'observation_ssrd6_lt{lead_time}.npy'), observation_ssrd6)
+
+
+            # ➡️ Dan pas het opslaan van de volledige MBM-output:
+            output_path = os.path.join(output_dir, f'MBM_Trunc_WS_{lead_time}.npy')
+            np.save(output_path, testMBM_whole)
+
+            
             # End timing for this lead time
             end_time = time.time()
             elapsed_time = end_time - start_time
