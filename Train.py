@@ -16,7 +16,7 @@ from datetime import datetime
 # Start timing at the beginning of the script
 start_time = time.time()
 
-scale_dict = {"t2m":(235, 304), "z": (48200, 58000), "t":(240, 299), "u10": (-13., 11.),"v10": (-30,35), "tcc": (0., 1.0),"sd":(0,8),"mx2t6":(230,320),"mn2t6":(225,315),"v":(-50,55), "w100":(0,50),"w10":(0,30), "u100": (-35,45), "u": (-45,60),"v100":(-40,45), "w700": (0,60), "p10fg6": (0,60), "oro":(-400,2800),"ssr6":(0,3800000),"ssrd6":(0,3800000),"strd6":(0,10000000)}
+scale_dict = {"t2m":(235, 304), "z": (48200, 58000), "t":(240, 299), "u10": (-13., 11.),"v10": (-30,35), "tcc": (0., 1.0),"sd":(0,8),"mx2t6":(230,320),"mn2t6":(225,315),"v":(-50,55), "w100":(0,50),"w10":(0,30), "u100": (-35,45), "u": (-45,60),"v100":(-40,45), "w700": (0,60), "p10fg6": (0,60), "oro":(-400,2800),"ssr6":(0,200000),"ssrd6":(0,200000),"strd6":(0,200000)}
 
 # Training
 #this function is designed to execute one epoch of training 
@@ -78,6 +78,42 @@ def test(epoch, testloader, model, criterion, args, device):
             loss=criterion(mu, sigma, targets)
 
             test_loss.append(loss.item())
+            if batch_idx == 0:
+                os.makedirs("results/ForecastPlots", exist_ok=True)
+                offset, scale = scale_dict[args.target_var]
+                
+                mu_plot = mu.cpu().numpy()                          
+                targets_plot = targets.cpu().numpy()
+
+                mu_mean = mu_plot[0].mean(axis=-1)          # shape (20,)
+                targets_mean = targets_plot[0].mean(axis=-1)
+                
+                print("mu mean:", mu_mean.mean().item())
+                print("mu min:", mu_mean.min().item())
+                print("mu max:", mu_mean.max().item())
+
+
+                raw_feature_tensor = inputs[..., 9]  
+                
+                print("raw_feature_tensor mean:", raw_feature_tensor.mean().item())
+                print("raw_feature_tensor min:", raw_feature_tensor.min().item())
+                print("raw_feature_tensor max:", raw_feature_tensor.max().item())
+
+
+                minval, maxval = scale_dict["ssrd6"]
+                raw_feature_tensor = raw_feature_tensor * (maxval - minval) + minval
+
+                
+                raw_mean = raw_feature_tensor[0].mean(dim=0).view(20, -1).mean(dim=-1).cpu().numpy()  # shape: (20,)
+
+                
+                np.save("/home/jupyter-ayoub/results/ForecastPlots/mu.npy", mu_mean)
+                np.save("/home/jupyter-ayoub/results/ForecastPlots/targets.npy", targets_mean)
+                np.save("/home/jupyter-ayoub/results/ForecastPlots/raw_forecast.npy", raw_mean)
+
+
+
+
 
 
     # Save checkpoint.

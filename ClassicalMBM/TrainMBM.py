@@ -35,7 +35,7 @@ def load_observation_data(file_list, base_dir, lead):
     for i, file in enumerate(file_list):
         file_path = os.path.join(base_dir, file)
         with xr.open_dataset(file_path) as dataset:
-            dataset = dataset.isel(step=slice(1, None)).squeeze("surface")
+            dataset = dataset.squeeze("surface")
             dataset = dataset.isel(step=lead)
             data_array[0, i, :, 0, 0, :, :] = dataset['ssrd6_obs']
     print("Observation data loaded.")
@@ -47,13 +47,14 @@ def load_observation_data(file_list, base_dir, lead):
 print("Loading testing forecast and observation data files...")
 with open(os.path.join(directory, "test_eupp_files.pkl"), 'rb') as f:
     rfcs_test_file = pickle.load(f)
+    print(rfcs_test_file)
 with open(os.path.join(directory, "test_era5_files.pkl"), 'rb') as f:
     obs_test_file = pickle.load(f)
-
+    print(obs_test_file)
 
 
 with open(time_log_path, 'w') as time_log_file:
-    for lead_time in range(0, 1):
+    for lead_time in range(1, 2):
         try:
             print(f"\nProcessing lead time {lead_time}...")
 
