@@ -38,7 +38,8 @@ class EUPPFullEnsembleDataset(Dataset):
         self.test_era5_files = []
     
             
-        eupp_files = glob.glob("./data/EUPP/output.sfc.*.nc")
+        #eupp_files = glob.glob("./data/EUPP/output.sfc.*.nc")
+        eupp_files = glob.glob("./data/EUPP_merged/output.sfc.*.nc")
         era5_files = glob.glob("/data/ERA5/era.sfc.*.nc")
         
         eupp_file_train_path = "./TrainValTestSplit/train_eupp_files.pkl"

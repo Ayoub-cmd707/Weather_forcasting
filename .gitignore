@@ -216,6 +216,11 @@ __pycache__/
 # Negeer alles in de map data/
 data/ERA5/
 data/EUPP/
+data/merged_files/
+data/test/
+data/ERA5_3j/
+data/EUPP_3j/
+data/EUPP_merged/
 
 # Bestanden die beginnen met test, train, of val in TrainValTestSplit negeren
 TrainValTestSplit/test*

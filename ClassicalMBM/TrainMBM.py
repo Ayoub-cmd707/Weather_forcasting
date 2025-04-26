@@ -129,27 +129,14 @@ with open(time_log_path, 'w') as time_log_file:
             # ➕ Voeg dit toe om de relevante SSRD6 arrays eruit te halen:
             ssrd6_index = params.index('ssrd6')
             
-            print("rfcs_array_test shape:", rfcs_array_test.shape)
-            print("ssrd6_index:", ssrd6_index)
-            print("params:", params)
-
-            forecast_ssrd6 = rfcs_array_test[ssrd6_index, :, 0, 0, 0, :, :]  # shape: (time, lat, lon)
-            print("testMBM_whole shape:", testMBM_whole.shape)
-
-            # Alleen als testMBM_whole exact dezelfde structuur heeft als rfcs_array_test
+            forecast_ssrd6 = rfcs_array_test[ssrd6_index, :, 0, 0, 0, :, :]
             if testMBM_whole.shape[0] == len(params):
                 mbm_prediction_ssrd6 = testMBM_whole[ssrd6_index, :, 0, 0, 0, :, :]
             else:
-                # testMBM_whole bevat alleen ssrd6
                 mbm_prediction_ssrd6 = testMBM_whole[0, :, 0, 0, 0, :, :]
-
-            observation_ssrd6 = obs_array_test[0, :, 0, 0, 0, :, :]  # shape: (time, lat, lon)
-            #print('voor np')
-            #print("rfcs_array_test shape:", rfcs_array_test.shape)
-            #print("ssrd6_index:", ssrd6_index)
-            #print("params:", params)
-            #print('begin met printen')
-            # ➕ En sla ze op voor plotting in notebook:
+            observation_ssrd6 = obs_array_test[0, :, 0, 0, 0, :, :]
+            
+            # voor plotting in notebook:
             np.save(os.path.join(output_dir, f'forecast_ssrd6_lt{lead_time}.npy'), forecast_ssrd6)
             np.save(os.path.join(output_dir, f'mbm_prediction_ssrd6_lt{lead_time}.npy'), mbm_prediction_ssrd6)
             np.save(os.path.join(output_dir, f'observation_ssrd6_lt{lead_time}.npy'), observation_ssrd6)
