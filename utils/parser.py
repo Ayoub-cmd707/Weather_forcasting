@@ -7,7 +7,7 @@ def args_parser():
     parser = argparse.ArgumentParser(description='Train a model on EUPP')
 
     parser.add_argument('--loss', type=str, default='CRPS',
-                        choices=['CRPS',  'CRPSTRUNC'],
+                        choices=['CRPS',  'CRPSTRUNC','CRPSKERNEL','CRPSKERNELSTEP','CRPSREG','CRPSRANK'],
                         help='Loss function for training (default: CRPS)')
 
     parser.add_argument('--seed', type=int, default=16,
@@ -21,7 +21,7 @@ def args_parser():
                         help='The path for both EUPP and ERA5 datasets (default: ./)')
 
     parser.add_argument('--target-var', type=str, default='t2m',
-                        choices=['w100','w10', 't2m','ssrd6'],
+                        choices=['w100','w10', 't2m', 'ssrd6'],
                         help='Target variable for prediction (default: t2m)')
 
     parser.add_argument('--resume', '-r', action='store_true',
@@ -48,10 +48,15 @@ def args_parser():
     
     parser.add_argument('--nheads', type=int, default=8,
                         help='Number of heads (default: 5)')
-    
+
     parser.add_argument('--num_predictors', type=int, default=12,
                         help='Number of predictors (default: 12)')
-
+    
+    parser.add_argument('--lambda_reg', type=float, default=0.02,
+                        help='Regularization strength for ensemble spread (default: 0.02)')
+    
+    parser.add_argument('--k_reg', type=float, default=3.3,
+                        help='Allowed deviation in std units before penalizing (default: 3.3)')
+    
     args = parser.parse_args()
     return args
-

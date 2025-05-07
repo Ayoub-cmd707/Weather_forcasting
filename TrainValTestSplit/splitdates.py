@@ -1,8 +1,10 @@
 import glob 
 import pickle 
 
-eupp_files = glob.glob("/home/jupyter-ayoub/data/EUPP/output.sfc.*.nc")
+eupp_files = glob.glob("/home/jupyter-ayoub/data/EUPP_merged/output.sfc.*.nc")
+#eupp_files = glob.glob("/home/jupyter-ayoub/data/EUPP/output.sfc.*.nc")
 era5_files = glob.glob("/home/jupyter-ayoub/data/ERA5/era.sfc.*.nc")
+#era5_files = glob.glob("/home/jupyter-aaron/Postprocessing/PP_EUPP/data/ERA5/era.sfc.*.nc")
 
 file_pairs = {}
 

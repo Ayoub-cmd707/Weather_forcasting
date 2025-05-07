@@ -1,170 +1,168 @@
 import sys, os
-sys.path.append('/home/jupyter-aaron/Postprocessing/pythie')
 import numpy as np
+sys.path.append('/home/jupyter-aaron/Postprocessing/pythie')
+#import mkl
+import multiprocessing
 import xarray as xr
 import pickle
 import gc
-import time  # Import time module to measure execution time
+import time 
 from core.data import Data
 import postprocessors.MBM as MBM
 
-#THIS IS FOR 100M WINDSPEED
-# Parameters and directories
-params = ['t2m', 'u10', 'v10', 'tcc', 'u100', 'v100', 'z', 't', 'p10fg6', 'ssrd6', 'strd6']
-directory = "../TrainValTestSplit"
+os.environ["OMP_NUM_THREADS"] = "12"  # Reduce OpenMP threads (was 32)
+os.environ["MKL_NUM_THREADS"] = "12"  # Reduce MKL threads
+os.environ["OPENBLAS_NUM_THREADS"] = "12"  # Reduce OpenBLAS threads
+os.environ["NUMEXPR_NUM_THREADS"] = "12"  # Reduce NumExpr threads
+
+#mkl.set_num_threads(12)
+
+
+target = 'ssrd6_obs'
+params = ['ssrd6']
+
+directory = "../TrainValTestSplit/ssrd6"
 base_dir = "../data"
-output_dir = './resultsClassicalMBM'  # Directory to save results
+output_dir = f'./resultsClassicalMBM/{target}'
 time_log_path = os.path.join(output_dir, 'training_times_per_lead_time.txt')
-# Function to load forecast data in batches
-def load_forecast_data(file_list, base_dir, params, lead):
+    
+
+def load_forecast_data(file_list, base_dir, params, lead, chunk_size=5):
+    """Loads forecast data in smaller chunks to reduce memory usage."""
     print(f"Loading forecast data for lead time {lead}...")
-    data_array = np.empty((len(params), len(file_list), 11, 1, 1, 32, 33), dtype=np.float32)
-    for i, file in enumerate(file_list):
-        file_path = os.path.join(base_dir, file)
-        with xr.open_dataset(file_path) as dataset:
-            dataset = dataset.isel(step=lead)
-            for j, var in enumerate(params):
-                data_array[j, i, :, 0, 0, :, :] = dataset[var]
-                if np.isnan(data_array[j, i]).any():
-                    print(f"⚠️ NaN gevonden in var '{var}' voor bestand: {file}")
-   
+
+    num_files = len(file_list)
+    chunked_arrays = []
+
+    for start in range(0, num_files, chunk_size):
+        end = min(start + chunk_size, num_files)
+        temp_array = np.empty((len(params), end - start, 11, 1, 1, 32, 33), dtype=np.float32)
+
+        for i, file in enumerate(file_list[start:end]):
+            file_path = os.path.join(base_dir, file)
+            with xr.open_dataset(file_path) as dataset:
+                dataset = dataset.isel(step=lead)
+                for j, var in enumerate(params):
+                    if var in dataset:
+                        #print(dataset[var].values.shape)
+                        temp_array[j, i, :, 0, 0, :, :] = dataset[var].values 
+                    else:
+                        print(f"Warning: {var} not found in {file}")
+
+        chunked_arrays.append(temp_array)
+        gc.collect()  # Free memory after each chunk
+
+    final_array = np.concatenate(chunked_arrays, axis=1)
     print("Forecast data loaded.")
-    return data_array
+    return final_array
 
-# Function to load observation data in batches
-def load_observation_data(file_list, base_dir, lead):
+def load_observation_data(file_list, base_dir, lead, chunk_size=5):
+    """Loads observation data in smaller chunks to reduce memory usage."""
     print(f"Loading observation data for lead time {lead}...")
-    data_array = np.empty((1, len(file_list), 1, 1, 1, 32, 33), dtype=np.float32)
-    for i, file in enumerate(file_list):
-        file_path = os.path.join(base_dir, file)
-        with xr.open_dataset(file_path) as dataset:
-            dataset = dataset.squeeze("surface")
-            dataset = dataset.isel(step=lead)
-            data_array[0, i, :, 0, 0, :, :] = dataset['ssrd6_obs']
+
+    num_files = len(file_list)
+    chunked_arrays = []
+
+    for start in range(0, num_files, chunk_size):
+        end = min(start + chunk_size, num_files)
+        temp_array = np.empty((1, end - start, 1, 1, 1, 32, 33), dtype=np.float32)
+
+        for i, file in enumerate(file_list[start:end]):
+            file_path = os.path.join(base_dir, file)
+            with xr.open_dataset(file_path) as dataset:
+                dataset = dataset.isel(step=lead)
+                temp_array[0, i, :, 0, 0, :, :] = dataset[target].values 
+
+        chunked_arrays.append(temp_array)
+        gc.collect()
+
+    final_array = np.concatenate(chunked_arrays, axis=1)
     print("Observation data loaded.")
-    return data_array
+    return final_array
 
 
+def main():
+    print("Loading testing forecast and observation data files...")
+    with open(os.path.join(directory, "test_eupp_files.pkl"), 'rb') as f:
+        rfcs_test_file = pickle.load(f)
+    with open(os.path.join(directory, "test_era5_files.pkl"), 'rb') as f:
+        obs_test_file = pickle.load(f)
 
-# Load testing files (loaded once as these don’t change in the loop)
-print("Loading testing forecast and observation data files...")
-with open(os.path.join(directory, "test_eupp_files.pkl"), 'rb') as f:
-    rfcs_test_file = pickle.load(f)
-    #print(rfcs_test_file)
-with open(os.path.join(directory, "test_era5_files.pkl"), 'rb') as f:
-    obs_test_file = pickle.load(f)
-    #print(obs_test_file)
+    os.makedirs(output_dir, exist_ok=True)
+    with open(time_log_path, 'w') as time_log_file:
+        for lead_time in range(0, 5):
+            try:
+                print(f"\nProcessing lead time {lead_time}...")
 
+                start_time = time.time()
 
-with open(time_log_path, 'w') as time_log_file:
-    for lead_time in range(0, 1):
-        try:
-            print(f"\nProcessing lead time {lead_time}...")
+                # Load training data in chunks to avoid memory spikes
+                print("Loading training forecast data files...")
+                with open(os.path.join(directory, "train_eupp_files.pkl"), 'rb') as f:
+                    rfcs_train_file = pickle.load(f)
+                rfcs_array_train = load_forecast_data(rfcs_train_file, base_dir, params, lead_time)
+                print("NaN check - rfcs_array_train:", np.isnan(rfcs_array_train).any())
+                del rfcs_train_file  # Free memory
+                gc.collect()
 
+                print("Loading training observation data files...")
+                with open(os.path.join(directory, "train_era5_files.pkl"), 'rb') as f:
+                    obs_train_file = pickle.load(f)
+                obs_array_train = load_observation_data(obs_train_file, base_dir, lead_time)
+                print("NaN check - obs_array_train:", np.isnan(obs_array_train).any())
+                del obs_train_file  # Free memory
+                gc.collect()
 
-            start_time = time.time()
+                # Train MBM
+                print("Initializing training data structures for MBM...")
+                rfcs_whole_Data = Data(rfcs_array_train)
+                obs_whole_Data = Data(obs_array_train)
+                print("Training MBM postprocessor...")
 
-            print("Loading training forecast data files...")
-            with open(os.path.join(directory, "train_eupp_files.pkl"), 'rb') as f:
-                rfcs_train_file = pickle.load(f)
-        
-            rfcs_array_train = load_forecast_data(rfcs_train_file, base_dir, params, lead_time)
-            print("NaN check - rfcs_array_train:", np.isnan(rfcs_array_train).any())
-            gc.collect()  # Free memory
+                if target == 't2m':
+                    essacc = MBM.EnsembleSpreadScalingNgrCRPSCorrection()
+                else:
+                    print("voor essacc")
+                    essacc = MBM.EnsembleAbsCRPSTruncCorrection()
+                    print("na essacc")
+                essacc.train(obs_whole_Data, rfcs_whole_Data, ntrial=1)
+                print("MBM training complete.")
 
-            print("Loading training observation data files...")
-            with open(os.path.join(directory, "train_era5_files.pkl"), 'rb') as f:
-                obs_train_file = pickle.load(f)
-                
-            obs_array_train = load_observation_data(obs_train_file, base_dir, lead_time)
-            print("NaN check - obs_array_train:", np.isnan(obs_array_train).any())
-            gc.collect()  # Free memory
+                # Free memory
+                del rfcs_array_train, obs_array_train, rfcs_whole_Data, obs_whole_Data
+                gc.collect()
 
-            # Initialize the data structures for MBM
-            print("Initializing training data structures for MBM...")
-            rfcs_whole_Data = Data(rfcs_array_train)
-            obs_whole_Data = Data(obs_array_train)
+                # Load test data in chunks
+                rfcs_array_test = load_forecast_data(rfcs_test_file, base_dir, params, lead_time)
+                print("NaN check - rfcs_array_test:", np.isnan(rfcs_array_test).any())
+                obs_array_test = load_observation_data(obs_test_file, base_dir, lead_time)
+                print("NaN check - obs_array_test:", np.isnan(obs_array_test).any())
+                gc.collect()
 
-                
-            
+                # Apply MBM postprocessor to the test data
+                print("Applying MBM postprocessor to testing data...")
+                test_whole = Data(rfcs_array_test)
+                testMBM_whole = essacc(test_whole)[:, :, :, :, :, :]
+                print(f"MBM testing complete for lead time {lead_time}.")
 
-            print("NaN check - rfcs_whole_Data.data:", np.isnan(rfcs_whole_Data.data).any())
-            print("NaN check - obs_whole_Data.data:", np.isnan(obs_whole_Data.data).any())
+                # Save results
+                output_path = os.path.join(output_dir, f'MBM_{target}_{lead_time}.npy')
+                np.save(output_path, testMBM_whole)
+                print(f"Results saved to {output_path}")
 
-            # Train the MBM postprocessor
-            print("Training MBM postprocessor...")
-            essacc = MBM.EnsembleAbsCRPSTruncCorrection()
-            print("Na training MBM, alles nog goed.")
-            essacc.train(obs_whole_Data, rfcs_whole_Data, ntrial=1)
-            print("MBM training complete.")
+                # Log execution time
+                elapsed_time = time.time() - start_time
+                time_log_file.write(f"Lead time {lead_time}: {elapsed_time:.2f} seconds\n")
+                time_log_file.flush()
+                print(f"Lead time {lead_time} took {elapsed_time:.2f} seconds")
 
-            # Clear memory
-            del rfcs_array_train, obs_array_train
-            gc.collect()
+            except Exception as e:
+                print(f"Error at lead time {lead_time}: {e}")
+                time_log_file.write(f"Lead time {lead_time}: ERROR - {str(e)}\n")
+                time_log_file.flush()
 
-            # Load testing forecast data for the current lead time
-            rfcs_array_test = load_forecast_data(rfcs_test_file, base_dir, params, lead_time)
-            print("NaN check - rfcs_array_test:", np.isnan(rfcs_array_test).any())
-            gc.collect()
-
-            # Load testing observation data for the current lead time
-            obs_array_test = load_observation_data(obs_test_file, base_dir, lead_time)
-            print("NaN check - obs_array_test:", np.isnan(obs_array_test).any())
-            gc.collect()
-            
-
-
-            # Apply MBM postprocessor to the test data
-            print("Applying MBM postprocessor to testing data...")
-            test_whole = Data(rfcs_array_test)
-            testMBM_whole = essacc(test_whole)[:,:,:,:,:,:]
-            print(f"MBM testing complete for lead time {lead_time}.")
-            
-            # Apply MBM postprocessor to the test data
-            print("Applying MBM postprocessor to testing data...")
-            test_whole = Data(rfcs_array_test)
-            testMBM_whole = essacc(test_whole)[:,:,:,:,:,:]
-            print(f"MBM testing complete for lead time {lead_time}.")
-
-            # ➕ Voeg dit toe om de relevante SSRD6 arrays eruit te halen:
-            ssrd6_index = params.index('ssrd6')
-            
-            forecast_ssrd6 = rfcs_array_test[ssrd6_index, :, 0, 0, 0, :, :]
-            if testMBM_whole.shape[0] == len(params):
-                mbm_prediction_ssrd6 = testMBM_whole[ssrd6_index, :, 0, 0, 0, :, :]
-            else:
-                mbm_prediction_ssrd6 = testMBM_whole[0, :, 0, 0, 0, :, :]
-            observation_ssrd6 = obs_array_test[0, :, 0, 0, 0, :, :]
-            
-            # voor plotting in notebook:
-            np.save(os.path.join(output_dir, f'forecast_ssrd6_lt{lead_time}.npy'), forecast_ssrd6)
-            np.save(os.path.join(output_dir, f'mbm_prediction_ssrd6_lt{lead_time}.npy'), mbm_prediction_ssrd6)
-            np.save(os.path.join(output_dir, f'observation_ssrd6_lt{lead_time}.npy'), observation_ssrd6)
-
-
-            # ➡️ Dan pas het opslaan van de volledige MBM-output:
-            output_path = os.path.join(output_dir, f'MBM_Trunc_WS_{lead_time}.npy')
-            np.save(output_path, testMBM_whole)
-
-            
-            # End timing for this lead time
-            end_time = time.time()
-            elapsed_time = end_time - start_time
-
-            # Save the result for the current lead time
-            output_path = os.path.join(output_dir, f'MBM_Trunc_WS_{lead_time}.npy')
-            np.save(output_path, testMBM_whole)
-            print(f"Results saved to {output_path}")
-
-            # Write the elapsed time to the log file
-            time_log_file.write(f"Lead time {lead_time}: {elapsed_time:.2f} seconds\n")
-            time_log_file.flush()  # Ensure the log is written immediately
-            print(f"Lead time {lead_time} took {elapsed_time:.2f} seconds")
-
-        except Exception as e:
-            print(f"An error occurred for lead time {lead_time}: {e}")
-            time_log_file.write(f"Lead time {lead_time}: ERROR - {str(e)}\n")
-            time_log_file.flush()
-
-
-print("All lead times processed.")
+    print("All lead times processed.")
+    
+# Set multiprocessing limit
+if __name__ == "__main__":
+    main()

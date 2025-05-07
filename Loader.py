@@ -18,17 +18,17 @@ class EUPPFullEnsembleDataset(Dataset):
         if target_var == "t2m":
             self.variables = ['t2m', 'z', 't', 'u10', 'v10', 'tcc', 'sd', 'mx2t6', 'mn2t6', 'w10', 'p10fg6', 'oro'] #12
         elif target_var == "w10":
-            self.variables = ['t2m', 'z', 't', 'u10', 'v10', 'tcc', 'sd', 'mx2t6', 'mn2t6', 'w10', 'u100', 'w100', 'p10fg6', 'v100', 'oro'] #15
+            self.variables = ['t2m', 'z', 't', 'u10', 'v10', 'tcc', 'w10', 'p10fg6','oro']# 'sd', 'mx2t6', 'mn2t6' ,'u100', 'w100','v100'] #9
         elif target_var == "w100":
-            self.variables = ['t2m', 'z', 't', 'u10', 'v10', 'tcc', 'w10', 'u100', 'w100', 'u', 'w700', 'p10fg6', 'v100', 'v', 'oro'] #15
+            #self.variables =  ['t2m', 'z', 't', 'u10', 'v10', 'tcc', 'w10', 'u100', 'w100', 'u', 'w700', 'p10fg6', 'v100', 'v', 'oro'] #15
+            self.variables =  ['t2m','t', 'u10', 'v10', 'tcc', 'w10', 'u100', 'w100', 'v100', 'oro'] #15
         elif target_var == "ssrd6":
-            self.variables = ['t2m', 'z', 't', 'u10', 'v10', 'tcc', 'u100', 'v100',  'p10fg6', 'ssrd6', 'strd6', 'oro']
-            #'t2m', 'u10', 'v10', 'tcc', 'u100', 'v100', 'z', 't', 'p10fg6', 
-            #[t2m, u10, v10, tcc, u100, v100, z, t, p10fg6, ssrd6, strd6, ssrd6_obs]
+            self.variables =  ['t2m', 'z', 't', 'u10', 'v10', 'tcc', 'w10', 'u100', 'w100', 'u', 'w700', 'p10fg6', 'v100', 'v', 'oro','ssrd6'] #15
+            #self.variables =  ['ssrd6', 'strd6', 'tcc', 'mn2t6', 't2m','tp6','z','t', 'u10', 'v10','w10', 'u100', 'w100', 'u', 'oro'] #15
         else:
             self.variables = []  
         self.target_var = target_var
-        self.value_range = {"t2m":(235, 304), "z": (48200, 58000), "t":(240, 299), "u10": (-13., 11.),"v10": (-30,35), "tcc": (0., 1.0),"sd":(0,8),"mx2t6":(230,320),"mn2t6":(225,315),"v":(-50,55), "w100":(0,50),"w10":(0,30), "u100": (-35,45), "u": (-45,60),"v100":(-40,45), "w700": (0,60), "p10fg6": (0,60), "oro":(-400,2800), "ssrd6":(0,200000), "ssrd6_obs": (0,200000), "strd6":(0,200000) }
+        self.value_range = {"t2m":(235, 304), "z": (48200, 58000), "t":(240, 299), "u10": (-13., 11.),"v10": (-30,35), "tcc": (0., 1.0),"sd":(0,8),"mx2t6":(230,320),"mn2t6":(225,315),"v":(-50,55), "w100":(0,50),"w10":(0,30), "u100": (-35,45), "u": (-45,60),"v100":(-40,45), "w700": (0,60), "p10fg6": (0,60), "oro":(-400,2800),"ssr6":(0,3200000),"ssrd6":(-5200.0,18541902.0),"strd6":(2103856,9537712),"tp6":(-4,1)}
 
         self.train_eupp_files = []
         self.train_era5_files = []
@@ -37,15 +37,15 @@ class EUPPFullEnsembleDataset(Dataset):
         self.test_eupp_files = []
         self.test_era5_files = []
     
-            
+        eupp_files = glob.glob("./data/EUPP_merged/output.sfc.*.nc")    
         #eupp_files = glob.glob("./data/EUPP/output.sfc.*.nc")
-        eupp_files = glob.glob("./data/EUPP_merged/output.sfc.*.nc")
-        era5_files = glob.glob("/data/ERA5/era.sfc.*.nc")
+        #era5_files = glob.glob("/data/ERA5/era.sfc.*.nc")
+        era5_files = glob.glob("/home/jupyter-aaron/Postprocessing/PP_EUPP/data/ERA5/era.sfc.*.nc")
         
-        eupp_file_train_path = "./TrainValTestSplit/train_eupp_files.pkl"
-        eupp_file_val_path = "./TrainValTestSplit/val_eupp_files.pkl"
-        era5_file_train_path = "./TrainValTestSplit/train_era5_files.pkl"
-        era5_file_val_path = "./TrainValTestSplit/val_era5_files.pkl"
+        eupp_file_train_path = f'./TrainValTestSplit/{target_var}/train_eupp_files.pkl'
+        eupp_file_val_path = f'./TrainValTestSplit/{target_var}/val_eupp_files.pkl'
+        era5_file_train_path = f'./TrainValTestSplit/{target_var}/train_era5_files.pkl'
+        era5_file_val_path = f'./TrainValTestSplit/{target_var}/val_era5_files.pkl'
   
         # Load the split files based on dataset type
         if dataset_type == "train":
@@ -66,9 +66,10 @@ class EUPPFullEnsembleDataset(Dataset):
         if isinstance(idx, int):
             ds_eupp = xr.open_dataset(self.eupp_files[idx]).drop_vars("time", errors="ignore")
             ds_eupp = ds_eupp.fillna(9999.0)
-            ds_era5 = xr.open_dataset(self.era5_files[idx]).fillna(9999.0)
-            ds_era5 = ds_era5.rename({'ssrd6_obs': 'ssrd6'})
-            orography_data = xr.open_dataset("/home/jupyter-aaron/Postprocessing/TfMBM_wind/baselines/data/oro.nc") 
+            ds_era5 = xr.open_dataset(self.era5_files[idx]).fillna(9999.0) # Exclude the first step, its absent in the reforecast files 
+            ds_era5 = ds_era5.rename({'w100_obs': 'w100'})
+            #ds_era5 = ds_era5.rename({'ssrd6_obs': 'ssrd6'})
+            orography_data = xr.open_dataset("/home/jupyter-aaron/Postprocessing/PP_EUPP/data/oro.nc") 
             #orography_data=orography_data.sel(latitude=slice(min_lat, max_lat), longitude=slice(min_lon, max_lon))
             ensemble=ds_eupp["number"].values
             step=ds_eupp["step"].values
@@ -103,17 +104,16 @@ class EUPPFullEnsembleDataset(Dataset):
                     values_tar = torch.reshape(torch.as_tensor(ds_eupp[variable].to_numpy()[:self.num_ensemble,:]), (1,self.num_ensemble,len_TD,len_lat*len_lon))
                     targets = torch.reshape(torch.as_tensor(ds_era5[variable].to_numpy()),(1,len_TD,len_lat*len_lon))
                     scale_std, scale_mean = torch.std_mean(values_tar, dim=1, unbiased=False)
-                    
             inputs = inputs.movedim(0,1) #(11,1,32,33) 
             inputs = inputs.movedim(1,-1)
-
+            #inputs, targets , scale_mean, scale_std torch.Size([11, 20, 32, 33, 12]) torch.Size([1, 20, 1056]) torch.Size([1, 20, 1056]) torch.Size([1, 20, 1056])
 
             if self.return_time:
                 return  inputs, targets , scale_mean, scale_std
             else:
                 return inputs, targets , scale_mean, scale_std
-            
-            
+
+
 def loader_prepare(args):
     trainloader = DataLoader(EUPPFullEnsembleDataset(data_path=args.data_path,
                                                       nsample=32*33,
@@ -127,3 +127,6 @@ def loader_prepare(args):
                                                      dataset_type='test', num_ensemble=args.ens_num, return_time=True),
                                 args.batch_size, shuffle=False, num_workers=4, pin_memory=True, prefetch_factor=4, persistent_workers=False)
     return trainloader, testloader
+
+
+
