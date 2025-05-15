@@ -1,6 +1,6 @@
 import sys, os
 import numpy as np
-sys.path.append('/home/jupyter-aaron/Postprocessing/pythie')
+sys.path.append('/home/jupyter-ayoub/pythie')
 #import mkl
 import multiprocessing
 import xarray as xr
@@ -90,7 +90,7 @@ def main():
 
     os.makedirs(output_dir, exist_ok=True)
     with open(time_log_path, 'w') as time_log_file:
-        for lead_time in range(0, 5):
+        for lead_time in range(0, 20):
             try:
                 print(f"\nProcessing lead time {lead_time}...")
 
@@ -112,7 +112,7 @@ def main():
                 print("NaN check - obs_array_train:", np.isnan(obs_array_train).any())
                 del obs_train_file  # Free memory
                 gc.collect()
-
+                
                 # Train MBM
                 print("Initializing training data structures for MBM...")
                 rfcs_whole_Data = Data(rfcs_array_train)
@@ -141,6 +141,7 @@ def main():
 
                 # Apply MBM postprocessor to the test data
                 print("Applying MBM postprocessor to testing data...")
+                
                 test_whole = Data(rfcs_array_test)
                 testMBM_whole = essacc(test_whole)[:, :, :, :, :, :]
                 print(f"MBM testing complete for lead time {lead_time}.")

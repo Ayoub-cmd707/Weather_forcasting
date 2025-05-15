@@ -20,15 +20,21 @@ class EUPPFullEnsembleDataset(Dataset):
         elif target_var == "w10":
             self.variables = ['t2m', 'z', 't', 'u10', 'v10', 'tcc', 'w10', 'p10fg6','oro']# 'sd', 'mx2t6', 'mn2t6' ,'u100', 'w100','v100'] #9
         elif target_var == "w100":
-            #self.variables =  ['t2m', 'z', 't', 'u10', 'v10', 'tcc', 'w10', 'u100', 'w100', 'u', 'w700', 'p10fg6', 'v100', 'v', 'oro'] #15
-            self.variables =  ['t2m','t', 'u10', 'v10', 'tcc', 'w10', 'u100', 'w100', 'v100', 'oro'] #15
+            self.variables = ['t2m', 'z', 't', 'u10', 'v10', 'tcc', 'w10', 'u100', 'w100', 'u', 'w700', 'p10fg6', 'v100', 'v', 'oro'] #15
+            #self.variables = ['t2m','t', 'u10', 'v10', 'tcc', 'w10', 'u100', 'w100', 'v100', 'oro'] #15
         elif target_var == "ssrd6":
-            self.variables =  ['t2m', 'z', 't', 'u10', 'v10', 'tcc', 'w10', 'u100', 'w100', 'u', 'w700', 'p10fg6', 'v100', 'v', 'oro','ssrd6'] #15
-            #self.variables =  ['ssrd6', 'strd6', 'tcc', 'mn2t6', 't2m','tp6','z','t', 'u10', 'v10','w10', 'u100', 'w100', 'u', 'oro'] #15
+            #self.variables = ['ssrd6']
+            #self.variables = ['t2m', 'z', 't', 'mx2t6', 'mn2t6', 'ssrd6', 'strd6', 'tcc', 'tp6', 'ssr6', 'str6', 'oro', 'p10fg6', 'w10', 'w100']
+            #self.variables = ['t2m', 'z', 't', 'mx2t6', 'mn2t6', 'ssrd6', 'strd6', 'tcc', 'tp6', 'ssr6', 'str6', 'oro']
+            #self.variables = ['t2m', 'z', 't', 'ssrd6', 'strd6', 'tcc', 'tp6', 'oro'] #8
+            self.variables = ['t2m', 'z', 't', 'u10', 'v10', 'tcc', 'w10', 'u100', 'w100', 'u', 'w700', 'p10fg6', 'v100', 'v', 'oro', 'ssrd6', 'strd6' ,'tp6']
+            #self.variables = ['t2m', 'z', 't', 'u10', 'v10', 'tcc', 'w10', 'u100', 'w100', 'u', 'w700', 'p10fg6', 'v100', 'v','ssrd6', 'strd6' ,'tp6','oro'] #18
+            #self.variables = ['t2m', 'z', 't', 'mx2t6', 'mn2t6', 'u10', 'v10', 'tcc', 'w10', 'u100', 'w100', 'u', 'w700', 'p10fg6', 'v100', 'v','ssrd6', 'strd6' ,'tp6','ssr6','str6','oro'] #22
+            #self.variables = ['ssrd6', 'strd6', 'tcc', 'mn2t6', 't2m','tp6','z','t', 'u10', 'v10','w10', 'u100', 'w100', 'u', 'oro'] #15
         else:
             self.variables = []  
         self.target_var = target_var
-        self.value_range = {"t2m":(235, 304), "z": (48200, 58000), "t":(240, 299), "u10": (-13., 11.),"v10": (-30,35), "tcc": (0., 1.0),"sd":(0,8),"mx2t6":(230,320),"mn2t6":(225,315),"v":(-50,55), "w100":(0,50),"w10":(0,30), "u100": (-35,45), "u": (-45,60),"v100":(-40,45), "w700": (0,60), "p10fg6": (0,60), "oro":(-400,2800),"ssr6":(0,3200000),"ssrd6":(-5200.0,18541902.0),"strd6":(2103856,9537712),"tp6":(-4,1)}
+        self.value_range = {"t2m":(235, 304), "z": (48200, 58000), "t":(240, 299), "u10": (-13., 11.),"v10": (-30,35), "tcc": (0., 1.0),"sd":(0,8),"mx2t6":(230,320),"mn2t6":(225,315),"v":(-50,55), "w100":(0,50),"w10":(0,30), "u100": (-35,45), "u": (-45,60),"v100":(-40,45), "w700": (0,60), "p10fg6": (0,60), "oro":(-400,2800),"ssrd6":(-5200.0,18541902.0),"strd6":(2103856,9537712),"tp6":(-4,1),"ssr6":(-4220.0,15344816.0),"str6":(-4630656.0,1093968.0)}
 
         self.train_eupp_files = []
         self.train_era5_files = []
@@ -36,11 +42,14 @@ class EUPPFullEnsembleDataset(Dataset):
         self.val_era5_files = []
         self.test_eupp_files = []
         self.test_era5_files = []
-    
-        eupp_files = glob.glob("./data/EUPP_merged/output.sfc.*.nc")    
+        
+        eupp_files = glob.glob("./data/EUPP_merged/output.sfc.*.nc")   
         #eupp_files = glob.glob("./data/EUPP/output.sfc.*.nc")
-        #era5_files = glob.glob("/data/ERA5/era.sfc.*.nc")
-        era5_files = glob.glob("/home/jupyter-aaron/Postprocessing/PP_EUPP/data/ERA5/era.sfc.*.nc")
+        if target_var == "ssrd6":
+            era5_files = glob.glob("/data/ERA5/era.sfc.*.nc")
+        else:
+            era5_files = glob.glob("/home/jupyter-aaron/Postprocessing/PP_EUPP/data/ERA5/era.sfc.*.nc")
+        
         
         eupp_file_train_path = f'./TrainValTestSplit/{target_var}/train_eupp_files.pkl'
         eupp_file_val_path = f'./TrainValTestSplit/{target_var}/val_eupp_files.pkl'
@@ -67,8 +76,12 @@ class EUPPFullEnsembleDataset(Dataset):
             ds_eupp = xr.open_dataset(self.eupp_files[idx]).drop_vars("time", errors="ignore")
             ds_eupp = ds_eupp.fillna(9999.0)
             ds_era5 = xr.open_dataset(self.era5_files[idx]).fillna(9999.0) # Exclude the first step, its absent in the reforecast files 
-            ds_era5 = ds_era5.rename({'w100_obs': 'w100'})
-            #ds_era5 = ds_era5.rename({'ssrd6_obs': 'ssrd6'})
+            if self.target_var == "ssrd6":
+                ds_era5 = ds_era5.rename({'ssrd6_obs': 'ssrd6'})
+            else:
+                ds_era5 = ds_era5.rename({'w100_obs': 'w100'})
+            
+            
             orography_data = xr.open_dataset("/home/jupyter-aaron/Postprocessing/PP_EUPP/data/oro.nc") 
             #orography_data=orography_data.sel(latitude=slice(min_lat, max_lat), longitude=slice(min_lon, max_lon))
             ensemble=ds_eupp["number"].values

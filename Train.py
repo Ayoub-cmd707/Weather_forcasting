@@ -17,7 +17,7 @@ from datetime import datetime
 # Start timing at the beginning of the script
 start_time = time.time()
 torch.cuda.init()  
-scale_dict = {"t2m":(235, 304), "z": (48200, 58000), "t":(240, 299), "u10": (-13., 11.),"v10": (-30,35), "tcc": (0., 1.0),"sd":(0,8),"mx2t6":(230,320),"mn2t6":(225,315),"v":(-50,55), "w100":(0,50),"w10":(0,30), "u100": (-35,45), "u": (-45,60),"v100":(-40,45), "w700": (0,60), "p10fg6": (0,60), "oro":(-400,2800),"ssr6":(0,3200000),"ssrd6":(-5200.0,18541902.0),"strd6":(2103856,9537712),"tp6":(-4,1)}
+scale_dict = {"t2m":(235, 304), "z": (48200, 58000), "t":(240, 299), "u10": (-13., 11.),"v10": (-30,35), "tcc": (0., 1.0),"sd":(0,8),"mx2t6":(230,320),"mn2t6":(225,315),"v":(-50,55), "w100":(0,50),"w10":(0,30), "u100": (-35,45), "u": (-45,60),"v100":(-40,45), "w700": (0,60), "p10fg6": (0,60), "oro":(-400,2800),"ssrd6":(-5200.0,18541902.0),"strd6":(2103856,9537712),"tp6":(-4,1),"ssr6":(-4220.0,15344816.0),"str6":(-4630656.0,1093968.0)}
 
 torch.cuda.empty_cache()
 
@@ -129,7 +129,9 @@ def test(epoch, testloader, model, criterion, args, device):
         }
         if not os.path.isdir('checkpoint'):
             os.mkdir('checkpoint')
-        checkpoint_path = f'results/Transformerweights/{args.target_var}/epochs{args.epochs}predictors{args.num_predictors}{args.loss}lambda{args.lambda_reg}k{args.k_reg}.pth'
+        #checkpoint_path = f'results/Transformerweights/{args.target_var}/epochs{args.epochs}predictors{args.num_predictors}{args.loss}lambda{args.lambda_reg}k{args.k_reg}.pth'
+        #checkpoint_path = f'results/Transformerweights/{args.target_var}/epochs{args.epochs}predictors{args.num_predictors}{args.loss}lambda{args.lambda_reg}k{args.k_reg}patiencepoch5.pth'
+        checkpoint_path = f'results/Transformerweights/{args.target_var}/epochs{args.epochs}predictors{args.num_predictors}{args.loss}lambda{args.lambda_reg}k{args.k_reg}order.pth'
         torch.save(state,checkpoint_path)
         #_lambda{args.lambda_reg}k{args.k_reg}_{rgs.decay_type}
         #lr{args.lr}epochs{args.epochs}b{args.batch_size}heads{args.nheads}mlt{args.mlp_mult}Stack{args.num_blocks}{args.projection_channels}
@@ -154,7 +156,7 @@ def train_model(args, device):
     global best_crps
     best_crps = 1e10  
     start_epoch = 0
-    patience = 6  # Number of epochs to wait
+    patience = 5 # Number of epochs to wait
     no_improve_epochs = 0  # Counter for no improvement
 
     trainloader, testloader = loader_prepare(args)

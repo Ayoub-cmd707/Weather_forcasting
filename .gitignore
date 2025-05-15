@@ -221,7 +221,9 @@ data/test/
 data/ERA5_3j/
 data/EUPP_3j/
 data/EUPP_merged/
-
+MEM/
+pythie/
+pythie
 # Bestanden die beginnen met test, train, of val in TrainValTestSplit negeren
 TrainValTestSplit/test*
 TrainValTestSplit/train*
