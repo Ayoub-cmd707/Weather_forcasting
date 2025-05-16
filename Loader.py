@@ -27,7 +27,9 @@ class EUPPFullEnsembleDataset(Dataset):
             #self.variables = ['t2m', 'z', 't', 'mx2t6', 'mn2t6', 'ssrd6', 'strd6', 'tcc', 'tp6', 'ssr6', 'str6', 'oro', 'p10fg6', 'w10', 'w100']
             #self.variables = ['t2m', 'z', 't', 'mx2t6', 'mn2t6', 'ssrd6', 'strd6', 'tcc', 'tp6', 'ssr6', 'str6', 'oro']
             #self.variables = ['t2m', 'z', 't', 'ssrd6', 'strd6', 'tcc', 'tp6', 'oro'] #8
-            self.variables = ['t2m', 'z', 't', 'u10', 'v10', 'tcc', 'w10', 'u100', 'w100', 'u', 'w700', 'p10fg6', 'v100', 'v', 'oro', 'ssrd6', 'strd6' ,'tp6']
+            self.variables = ['t2m', 'z', 't', 'u10', 'v10', 'tcc', 'w10', 'u100', 'strd6', 'ssrd6','tp6', 'w100', 'u', 'w700', 'p10fg6', 'v100', 'v', 'oro']
+            #self.variables = ['ssrd6', 'strd6' ,'tp6','t2m', 'z', 't', 'u10', 'v10', 'tcc', 'w10', 'u100', 'w100', 'u', 'w700', 'p10fg6', 'v100', 'v', 'oro']
+            #self.variables = ['t2m', 'z', 't', 'u10', 'v10', 'tcc', 'w10', 'u100', 'w100', 'u', 'w700', 'p10fg6', 'v100', 'v', 'oro', 'ssrd6', 'strd6' ,'tp6']
             #self.variables = ['t2m', 'z', 't', 'u10', 'v10', 'tcc', 'w10', 'u100', 'w100', 'u', 'w700', 'p10fg6', 'v100', 'v','ssrd6', 'strd6' ,'tp6','oro'] #18
             #self.variables = ['t2m', 'z', 't', 'mx2t6', 'mn2t6', 'u10', 'v10', 'tcc', 'w10', 'u100', 'w100', 'u', 'w700', 'p10fg6', 'v100', 'v','ssrd6', 'strd6' ,'tp6','ssr6','str6','oro'] #22
             #self.variables = ['ssrd6', 'strd6', 'tcc', 'mn2t6', 't2m','tp6','z','t', 'u10', 'v10','w10', 'u100', 'w100', 'u', 'oro'] #15

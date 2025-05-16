@@ -131,7 +131,7 @@ def test(epoch, testloader, model, criterion, args, device):
             os.mkdir('checkpoint')
         #checkpoint_path = f'results/Transformerweights/{args.target_var}/epochs{args.epochs}predictors{args.num_predictors}{args.loss}lambda{args.lambda_reg}k{args.k_reg}.pth'
         #checkpoint_path = f'results/Transformerweights/{args.target_var}/epochs{args.epochs}predictors{args.num_predictors}{args.loss}lambda{args.lambda_reg}k{args.k_reg}patiencepoch5.pth'
-        checkpoint_path = f'results/Transformerweights/{args.target_var}/epochs{args.epochs}predictors{args.num_predictors}{args.loss}lambda{args.lambda_reg}k{args.k_reg}order.pth'
+        checkpoint_path = f'results/Transformerweights/{args.target_var}/epochs{args.epochs}predictors{args.num_predictors}{args.loss}lambda{args.lambda_reg}k{args.k_reg}ordermiddel.pth'
         torch.save(state,checkpoint_path)
         #_lambda{args.lambda_reg}k{args.k_reg}_{rgs.decay_type}
         #lr{args.lr}epochs{args.epochs}b{args.batch_size}heads{args.nheads}mlt{args.mlp_mult}Stack{args.num_blocks}{args.projection_channels}
