@@ -224,8 +224,7 @@ data/EUPP_merged/
 MEM/
 pythie/
 pythie
-Pictures/
-Pictures
+
 # Bestanden die beginnen met test, train, of val in TrainValTestSplit negeren
 TrainValTestSplit/test*
 TrainValTestSplit/train*
