@@ -1,7 +1,8 @@
-Weather Forecasting with Machine Learning
-This repository contains a project focused on improving weather forecasting using machine learning techniques. Our aim is to leverage data-driven models to provide more accurate and reliable weather predictions.
+# Improving weather predictions with machine learning
+This repository contains the implementation for my Master’s thesis project, which focused on improving weather forecasts for renewable energy applications using machine learning. In this project, I explored how Transformer-based deep learning models can be used to postprocess ensemble weather forecasts of solar radiation (ssrd6) and 100-meter wind speed (w100). I compared the Transformer approach with traditional methods like Member-by-Member (MBM) to see if it could offer more reliable and faster predictions.
 
-Features
+This work was carried out as part of my Master of Science in Electronics and Information and Communication Technology at the University of Antwerp. The results from this project were used to write my Master’s thesis.
+## Features
 - Machine Learning Models: Uses advanced ML techniques to enhance forecast accuracy.
 
 - Data Processing: Prepares and cleans historical weather data for modeling.
@@ -9,7 +10,7 @@ Features
 - Visualization: Provides code to visualize forecast results and performance.
 
 
-Technologies Used
+## Technologies Used
 - Python
 
 - PyTorch / TensorFlow (depending on your setup)
@@ -19,7 +20,9 @@ Technologies Used
 - pandas, numpy (data wrangling and analysis)
 
 - matplotlib (visualization)
-# Clone the repository
+
+
+## Usefull command's
 ```bash
 git clone https://github.com/Ayoub-cmd707/Weather_forcasting.git
 ```
